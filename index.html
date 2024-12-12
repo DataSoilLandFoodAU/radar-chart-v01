@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar Chart Example</title>
+    <!-- Link to Chart.js from a CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        canvas {
+            max-width: 600px;
+            max-height: 600px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Radar Chart Example</h1>
+    <!-- The canvas element for the chart -->
+    <canvas id="myRadarChart"></canvas>
+
+    <script>
+        // Select the canvas element
+        const ctx = document.getElementById('myRadarChart').getContext('2d');
+
+        // Create a radar chart
+        const myRadarChart = new Chart(ctx, {
+            type: 'radar', // Chart type
+            data: {
+                labels: ['A', 'B', 'C', 'D', 'E', 'F'], // Categories
+                datasets: [
+                    {
+                        label: 'Dataset 1',
+                        data: [65, 59, 90, 81, 56, 55],
+                        fill: true,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                    },
+                    {
+                        label: 'Dataset 2',
+                        data: [28, 48, 40, 19, 96, 27],
+                        fill: true,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                    }
+                ]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    r: {
+                        pointLabels: {
+                            color: function(context) {
+                                // Custom colors for each category
+                                const index = context.index;
+                                if (index === 0 || index === 1) return 'red';
+                                if (index === 2 || index === 3) return 'blue';
+                                if (index === 4 || index === 5) return 'green';
+                                return 'black';
+                            },
+                            font: {
+                                size: 14,
+                            },
+                        },
+                        grid: {
+                            color: 'rgba(200, 200, 200, 0.2)', // Optional grid customization
+                        },
+                        angleLines: {
+                            color: 'rgba(200, 200, 200, 0.2)', // Optional angle line customization
+                        },
+                    },
+                }
+            }
+        });
+    </script>
+</body>
+</html>
