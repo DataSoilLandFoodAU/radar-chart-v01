@@ -1,91 +1,255 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radar Chart Example</title>
-    <!-- Link to Chart.js from a CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Polar Area Chart with Reserved Padding</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/csv/dist/csv.full.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             height: 100vh;
             margin: 0;
         }
-        canvas {
-            max-width: 600px;
-            max-height: 600px;
-        }
     </style>
 </head>
+
 <body>
-    <h1>Radar Chart Example</h1>
-    <!-- The canvas element for the chart -->
-    <canvas id="myRadarChart"></canvas>
+    <div>
+        <canvas id="customPolarChart" width="600" height="600"></canvas>
+    </div>
 
     <script>
-        // Select the canvas element
-        const ctx = document.getElementById('myRadarChart').getContext('2d');
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
-        // Create a radar chart
-        const myRadarChart = new Chart(ctx, {
-            type: 'radar', // Chart type
+        // Data values and labels
+        const dataValues = [3, 1, 2, 4, 3, 1, 2];
+        const labels = ["Groundcover","Infiltration", "Aggregate Stability 1", "Aggregate Stability 2", "Soil pH", "Topsoil Depth", "Organism Diversity"];
+
+        // Assign colors based on data values (red to green scale)
+        const segmentColors = dataValues.map(value => {
+            if (value === 1) return "#bf4526"; // Red
+            if (value === 2) return "#e6d419"; // Yellow
+            if (value === 3) return "#98d613"; // Light Yellowish Green
+            if (value === 4) return "#10a30d"; // Green
+            return "#CCCCCC"; // Default (if value is out of range)
+        });
+
+        // Category-based colors for outer rings
+        const categoryColors = {
+            A: "#668fd1", // Blue for Category A
+            B: "#ab79d4", // Pink for Category B
+            C: "#79d4a6"  // Green for Category C
+        };
+
+        // Mapping each label to its category
+        const categoryMapping = ["A", "A","A","A", "B", "C", "C"];
+
+        // Create the chart
+        const ctx = document.getElementById("customPolarChart").getContext("2d");
+
+        const arcTextPlugin = {
+  id: 'arcText',
+  afterDraw(chart) {
+    const { ctx, scales, data } = chart;
+    const { r } = scales;
+
+    if (!r) return;
+
+    ctx.save();
+
+    const labels = data.labels;
+    const centerX = r.xCenter;
+    const centerY = r.yCenter;
+    const outerRadius = r.drawingArea + 30; // Position labels slightly outside the chart
+
+    const angleOffset = 27 * (Math.PI / 180); // 36 degrees in radians
+
+    ctx.font = 'bold 14px Arial';
+    ctx.fillStyle = '#000';
+
+    labels.forEach((label, index) => {
+      const baseAngle = r.getIndexAngle(index) - Math.PI / 2; // Adjust for -90 degrees
+      const angle = baseAngle + angleOffset;
+
+      const labelRadius = outerRadius;
+
+      // Break the label into individual characters for arc rendering
+      const characters = label.split('');
+      const totalArcLength = characters.length * 8; // Approximate arc length per character
+      const startAngle = angle - totalArcLength / (2 * labelRadius); // Center the label along the arc
+
+      let currentAngle = startAngle;
+
+      characters.forEach((char) => {
+        const x = centerX + Math.cos(currentAngle) * labelRadius;
+        const y = centerY + Math.sin(currentAngle) * labelRadius;
+
+        // Rotate the canvas to align each character with the arc
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(currentAngle + Math.PI / 2);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(char, 0, 0);
+        ctx.restore();
+
+        // Advance to the next character's position
+        currentAngle += 8 / labelRadius; // Adjust arc spacing
+      });
+    });
+
+    ctx.restore();
+  },
+};
+
+    // Register the custom plugin
+    Chart.register(arcTextPlugin);
+
+        new Chart(ctx, {
+            type: "polarArea",
             data: {
-                labels: ['A', 'B', 'C', 'D', 'E', 'F'], // Categories
-                datasets: [
-                    {
-                        label: 'Dataset 1',
-                        data: [65, 59, 90, 81, 56, 55],
-                        fill: true,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        pointBackgroundColor: 'rgba(75, 192, 192, 1)',
-                    },
-                    {
-                        label: 'Dataset 2',
-                        data: [28, 48, 40, 19, 96, 27],
-                        fill: true,
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
-                    }
-                ]
+                labels: labels,
+                datasets: [{
+                    data: dataValues,
+                    backgroundColor: segmentColors, // Set segment colors
+                }]
             },
             options: {
-                plugins: {
-                    legend: {
-                        position: 'top',
+                responsive: true,
+                layout: {
+                    padding: {
+                        left: 100,  // Reserve 100px on the left
+                        right: 100, // Reserve 100px on the right
+                        top: 100,   // Reserve 100px on the top
+                        bottom: 100 // Reserve 100px on the bottom
                     }
                 },
                 scales: {
                     r: {
-                        pointLabels: {
-                            color: function(context) {
-                                // Custom colors for each category
-                                const index = context.index;
-                                if (index === 0 || index === 1) return 'red';
-                                if (index === 2 || index === 3) return 'blue';
-                                if (index === 4 || index === 5) return 'green';
-                                return 'black';
-                            },
-                            font: {
-                                size: 14,
-                            },
-                        },
-                        grid: {
-                            color: 'rgba(200, 200, 200, 0.2)', // Optional grid customization
-                        },
-                        angleLines: {
-                            color: 'rgba(200, 200, 200, 0.2)', // Optional angle line customization
-                        },
+                        beginAtZero: true, // Ensure scale starts from 0
+                        min: 0,
+                        max: 4, // Set max to 4 to match data values
+                        ticks: {
+                            stepSize: 1,
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false // legend
                     },
+                    customLabels: {}
+                },
+                elements: {
+                    arc: {
+                        borderWidth: 0 // default segment borders
+                    }
                 }
-            }
+            },
+            plugins: [
+                {
+                    id: "outerBorder",
+                    beforeDraw(chart) {
+                        const { ctx, chartArea, scales } = chart;
+                        const { r } = scales;
+
+                        // Correct center coordinates of the chart area
+                        const centerX = chartArea.left + (chartArea.right - chartArea.left) / 2;
+                        const centerY = chartArea.top + (chartArea.bottom - chartArea.top) / 2;
+
+                        // Adjust outer radius for padding
+                        const outerRadius = r.drawingArea + 30;
+
+                        // Draw the outer category borders
+                        chart.data.labels.forEach((label, index) => {
+                            const category = categoryMapping[index];
+                            const color = categoryColors[category];
+
+                            // Calculate start and end angles for each segment
+                            const startAngle = r.getIndexAngle(index) - Math.PI / 2; // Adjust angle (-90 degrees)
+                            const endAngle = r.getIndexAngle(index + 1) - Math.PI / 2; // Adjust angle (-90 degrees)
+
+                            // Draw the arc for the outer ring
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
+                            ctx.lineWidth = 60; // Thickness of outer ring
+                            ctx.strokeStyle = hexToRgba(color, 0.5); // Category color
+                            ctx.stroke();
+                            ctx.restore();
+                        });
+                    }
+                },
+                {
+                    id: "gridInFront",
+                    afterDraw(chart) {
+                        const { ctx, scales } = chart;
+
+                        // Ensure radial scale exists
+                        const r = scales.r;
+                        if (!r) {
+                            console.error("Radial scale (scales.r) is missing!");
+                            return;
+                        }
+
+                        ctx.save();
+
+                        try {
+                            // Safely access angleLines properties
+                            const angleLineColor = (r.angleLines && r.angleLines.color) || "#DDD";
+                            const angleLineWidth = (r.angleLines && r.angleLines.lineWidth) || 1;
+
+                            // Safely access grid properties
+                            const gridColor = (r.grid && r.grid.color) || "#DDD";
+                            const gridLineWidth = (r.grid && r.grid.lineWidth) || 1;
+
+                            // Draw concentric grid lines
+                            r.ticks.forEach((tick, index) => {
+                                const radius = r.getDistanceFromCenterForValue(tick.value);
+
+                                if (radius) {
+                                    ctx.beginPath();
+                                    ctx.arc(r.xCenter, r.yCenter, radius, 0, Math.PI * 2);
+                                    ctx.strokeStyle = gridColor;
+                                    ctx.lineWidth = gridLineWidth;
+                                    ctx.stroke();
+                                }
+                            });
+
+                            // Draw radial category lines
+                            r._pointLabels.forEach((label, index) => {
+                                const angle = r.getIndexAngle(index) - Math.PI / 2;
+                                const x = r.xCenter + Math.cos(angle) * r.drawingArea;
+                                const y = r.yCenter + Math.sin(angle) * r.drawingArea;
+
+                                ctx.beginPath();
+                                ctx.moveTo(r.xCenter, r.yCenter);
+                                ctx.lineTo(x, y);
+                                ctx.strokeStyle = angleLineColor;
+                                ctx.lineWidth = angleLineWidth;
+                                ctx.stroke();
+                            });
+                        } catch (error) {
+                            console.error("Error in custom plugin:", error);
+                        }
+
+                        ctx.restore();
+                    }
+                }
+            ]
         });
     </script>
 </body>
+
 </html>
