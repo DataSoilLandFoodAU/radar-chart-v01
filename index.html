@@ -25,30 +25,15 @@
 
     <script>
         async function fetchZohoSheetData() {
-    const accessToken = "1000.3aeeeebcbf94513339c3af0eed2508e4.2d32f4d412ad78056f2964f71d55e667"; // Use your latest token
-    const sheetId = "hhsl7fba5a2332a0e41e08271b067e6b7e077";
-
-    const url = `https://www.zohoapis.com.au/sheet/api/v2/spreadsheets/${sheetId}/data`;
+    const url = `https://cors-anywhere.herokuapp.com/https://www.zohoapis.com.au/sheet/api/v2/spreadsheets/hhsl7fba5a2332a0e41e08271b067e6b7e077/data`;
 
     try {
         const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                "Authorization": `Zoho-oauthtoken ${accessToken}`,
-                "Content-Type": "application/json"
-            }
+            headers: { "Authorization": "Zoho-oauthtoken 1000.3aeeeebcbf94513339c3af0eed2508e4.2d32f4d412ad78056f2964f71d55e667" }
         });
 
-        if (!response.ok) {
-            throw new Error(`Error fetching data: ${response.statusText}`);
-        }
-
         const jsonResponse = await response.json();
-        console.log("✅ Full Zoho Sheet Data:", jsonResponse); // Log the full data
-
-        // 🔍 Extract value from cell B5
-        const b5Value = getCellValue(jsonResponse, "B5");
-        console.log("🔹 Value in Cell B5:", b5Value);
+        console.log("✅ Zoho Sheet Data:", jsonResponse);
     } catch (error) {
         console.error("❌ Fetch error:", error);
     }
