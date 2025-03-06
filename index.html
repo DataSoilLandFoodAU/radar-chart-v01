@@ -24,95 +24,59 @@
     </div>
 
     <script>
-        async function fetchZohoSheetData() {
-    const url = `https://cors-anywhere.herokuapp.com/https://www.zohoapis.com.au/sheet/api/v2/spreadsheets/hhsl7fba5a2332a0e41e08271b067e6b7e077/data`;
+        const accessToken = "1000.7c58f14a79e0eaaa6978754b65512740.a3f021a8cad177050edddb340ebc08b5";  // Replace with your actual token
+        const spreadsheetId = "hhsl7fba5a2332a0e41e08271b067e6b7e077"; // Replace with your Zoho Sheet ID
+        const worksheetName = "Input"; // The worksheet name you want to access
 
-    try {
-        const response = await fetch(url, {
-            headers: { "Authorization": "Zoho-oauthtoken 1000.3aeeeebcbf94513339c3af0eed2508e4.2d32f4d412ad78056f2964f71d55e667" }
+        // ✅ Zoho API URL
+        const url = `https://sheet.zoho.com/api/v2/${spreadsheetId}?method=worksheet.records.fetch`;
+
+        // ✅ Request Parameters
+        const params = new URLSearchParams({
+            worksheet_name: worksheetName,
+            header_row: 1,
+            render_option: 'formatted',
+            records_start_index: 1
         });
-
-        const jsonResponse = await response.json();
-        console.log("✅ Zoho Sheet Data:", jsonResponse);
-    } catch (error) {
-        console.error("❌ Fetch error:", error);
-    }
-}
-
-    function updateChartWithZohoData(data) {
-        const labels = [];
-        const dataValues = [];
-
-        data.data.forEach(row => {
-            labels.push(row[0]);
-            dataValues.push(Number(row[1]));
-        });
-
-        myChart.data.labels = labels;
-        myChart.data.datasets[0].data = dataValues;
-        myChart.update();
-    }
-
-    async function refreshZohoToken() {
-        const clientId = "1000.XQ2BTW1QNWUN3P2BFIJ5S5RTJDPXPA";
-        const clientSecret = "af480f4d8006344a4206a384ed7329152584fcfd90";
-        const refreshToken = "1000.2d86c0430c05d3a3fbc20a9977c647fa.2d739999aed2b20e905f2b96261ed188";
-
-        const url = "https://accounts.zoho.com.au/oauth/v2/token";
-
-        const params = new URLSearchParams();
-        params.append("refresh_token", refreshToken);
-        params.append("client_id", clientId);
-        params.append("client_secret", clientSecret);
-        params.append("grant_type", "refresh_token");
 
         try {
+            // ✅ Fetch API Request
             const response = await fetch(url, {
                 method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                headers: {
+                    "Authorization": `Zoho-oauthtoken ${accessToken}`,
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
                 body: params
             });
 
+            // ✅ Handle Response
             if (!response.ok) {
-                throw new Error(`Token refresh failed: ${response.statusText}`);
+                throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
             }
 
             const data = await response.json();
-            console.log("New Access Token:", data.access_token);
+            console.log("📌 Zoho Sheet Data:", data);
 
-            return data.access_token;
+            // ✅ Display Data on Page
+            document.getElementById("output").textContent = JSON.stringify(data.records, null, 2);
+
         } catch (error) {
-            console.error("Token refresh error:", error);
+            console.error("❌ Error:", error);
+            document.getElementById("output").textContent = "Error fetching data!";
         }
-    }
 
-    // Fetch data on page load
-    fetchZohoSheetData();
 
-    function getCellValue(sheetData, cellAddress) {
-    const sheetRows = sheetData.data;
-    const columnLetter = cellAddress.charAt(0); // Example: "B"
-    const rowNumber = parseInt(cellAddress.slice(1), 10); // Example: 5
-
-    const columnIndex = columnLetter.charCodeAt(0) - "A".charCodeAt(0); // Convert "B" to index 1
-
-    if (rowNumber - 1 < sheetRows.length && columnIndex < sheetRows[rowNumber - 1].length) {
-        return sheetRows[rowNumber - 1][columnIndex]; // Return the value in B5
-    } else {
-        return "❌ Cell not found";
-    }
-}
-
-function hexToRgba(hex, alpha) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
 
         // Data values and labels
         const dataValues = [3, 1, 2, 4, 3, 1, 2];
-        const labels = ["Groundcover","Infiltration", "Aggregate Stability 1", "Aggregate Stability 2", "Soil pH", "Topsoil Depth", "Organism Diversity"];
+        const labels = ["Groundcover", "Infiltration", "Aggregate Stability 1", "Aggregate Stability 2", "Soil pH", "Topsoil Depth", "Organism Diversity"];
 
         // Assign colors based on data values (red to green scale)
         const segmentColors = dataValues.map(value => {
@@ -131,68 +95,68 @@ function hexToRgba(hex, alpha) {
         };
 
         // Mapping each label to its category
-        const categoryMapping = ["A", "A","A","A", "B", "C", "C"];
+        const categoryMapping = ["A", "A", "A", "A", "B", "C", "C"];
 
         // Create the chart
         const ctx = document.getElementById("customPolarChart").getContext("2d");
 
         const arcTextPlugin = {
-  id: 'arcText',
-  afterDraw(chart) {
-    const { ctx, scales, data } = chart;
-    const { r } = scales;
+            id: 'arcText',
+            afterDraw(chart) {
+                const { ctx, scales, data } = chart;
+                const { r } = scales;
 
-    if (!r) return;
+                if (!r) return;
 
-    ctx.save();
+                ctx.save();
 
-    const labels = data.labels;
-    const centerX = r.xCenter;
-    const centerY = r.yCenter;
-    const outerRadius = r.drawingArea + 30; // Position labels slightly outside the chart
+                const labels = data.labels;
+                const centerX = r.xCenter;
+                const centerY = r.yCenter;
+                const outerRadius = r.drawingArea + 30; // Position labels slightly outside the chart
 
-    const angleOffset = 27 * (Math.PI / 180); // 36 degrees in radians
+                const angleOffset = 27 * (Math.PI / 180); // 36 degrees in radians
 
-    ctx.font = 'bold 14px Arial';
-    ctx.fillStyle = '#000';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillStyle = '#000';
 
-    labels.forEach((label, index) => {
-      const baseAngle = r.getIndexAngle(index) - Math.PI / 2; // Adjust for -90 degrees
-      const angle = baseAngle + angleOffset;
+                labels.forEach((label, index) => {
+                    const baseAngle = r.getIndexAngle(index) - Math.PI / 2; // Adjust for -90 degrees
+                    const angle = baseAngle + angleOffset;
 
-      const labelRadius = outerRadius;
+                    const labelRadius = outerRadius;
 
-      // Break the label into individual characters for arc rendering
-      const characters = label.split('');
-      const totalArcLength = characters.length * 8; // Approximate arc length per character
-      const startAngle = angle - totalArcLength / (2 * labelRadius); // Center the label along the arc
+                    // Break the label into individual characters for arc rendering
+                    const characters = label.split('');
+                    const totalArcLength = characters.length * 8; // Approximate arc length per character
+                    const startAngle = angle - totalArcLength / (2 * labelRadius); // Center the label along the arc
 
-      let currentAngle = startAngle;
+                    let currentAngle = startAngle;
 
-      characters.forEach((char) => {
-        const x = centerX + Math.cos(currentAngle) * labelRadius;
-        const y = centerY + Math.sin(currentAngle) * labelRadius;
+                    characters.forEach((char) => {
+                        const x = centerX + Math.cos(currentAngle) * labelRadius;
+                        const y = centerY + Math.sin(currentAngle) * labelRadius;
 
-        // Rotate the canvas to align each character with the arc
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(currentAngle + Math.PI / 2);
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(char, 0, 0);
-        ctx.restore();
+                        // Rotate the canvas to align each character with the arc
+                        ctx.save();
+                        ctx.translate(x, y);
+                        ctx.rotate(currentAngle + Math.PI / 2);
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(char, 0, 0);
+                        ctx.restore();
 
-        // Advance to the next character's position
-        currentAngle += 8 / labelRadius; // Adjust arc spacing
-      });
-    });
+                        // Advance to the next character's position
+                        currentAngle += 8 / labelRadius; // Adjust arc spacing
+                    });
+                });
 
-    ctx.restore();
-  },
-};
+                ctx.restore();
+            },
+        };
 
-    // Register the custom plugin
-    Chart.register(arcTextPlugin);
+        // Register the custom plugin
+        Chart.register(arcTextPlugin);
 
         new Chart(ctx, {
             type: "polarArea",
