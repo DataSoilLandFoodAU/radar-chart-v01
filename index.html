@@ -28,7 +28,7 @@
         const worksheetName = "Input"; // The worksheet name you want to access
 
         async function fetchZohoSheetData() {
-            const url = `https://sheet.zoho.com/api/v2/${spreadsheetId}`;
+            const url = `https://cors-anywhere.herokuapp.com/https://sheet.zoho.com/api/v2/${spreadsheetId}`;
 
             // ✅ Request Parameters (Correct Format)
             const params = new URLSearchParams({
