@@ -86,7 +86,10 @@ app.get('/fetch-data', async (req, res) => {
 app.get('/refresh-token', async (req, res) => {
     try {
         const token = await getAccessToken();
-        res.json({ message: "New access token obtained!", access_token: token });
+        res.json({ 
+            message: "New access token obtained!", 
+            access_token: token 
+        });  // ✅ Now includes the token in the response
     } catch (error) {
         res.status(500).json({ error: "Failed to refresh token." });
     }
