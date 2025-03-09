@@ -1,66 +1,77 @@
+require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
-const cheerio = require("cheerio");
-const cors = require("cors");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// ✅ Enable CORS
-app.use(cors());
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const ZOHO_REDIRECT_URI = process.env.ZOHO_REDIRECT_URI;
+const ZOHO_SHEET_ID = process.env.ZOHO_SHEET_ID;
 
-// ✅ Replace this with your actual Zoho Sheet published URL
-const zohoSheetURL = "https://sheet.zohopublic.com.au/sheet/publishedrange/6280ec24648d0c9ee2654ace72b84e51fd928f8037a5f1d5470af6b3fb51a6d7?type=grid";
+let accessToken = null;  // Store access token
 
-app.get("/fetch-data", async (req, res) => {
+// ✅ Step 1: Redirect to Zoho OAuth
+app.get("/auth", (req, res) => {
+    const authUrl = `https://accounts.zoho.com.au/oauth/v2/auth?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(ZOHO_REDIRECT_URI)}&scope=ZohoSheet.dataAPI.READ&access_type=offline&state=1234`;
+    res.redirect(authUrl);
+});
+
+// ✅ Step 2: Handle OAuth Callback & Get Access Token
+app.get("/oauth/callback", async (req, res) => {
+    const authCode = req.query.code;
+    if (!authCode) return res.status(400).json({ error: "Missing authorization code" });
+
     try {
-        // 🔍 Fetch the Zoho Sheet published page
-        const response = await axios.get(zohoSheetURL);
-        const html = response.data;
-
-        // ✅ Load HTML into Cheerio
-        const $ = cheerio.load(html);
-
-        // 🔍 Find table data inside the HTML
-        let extractedData = [];
-        $("table tbody tr").each((rowIndex, row) => {
-            let rowData = [];
-            $(row).find("td").each((colIndex, cell) => {
-                rowData.push($(cell).text().trim());
-            });
-            extractedData.push(rowData);
+        const response = await axios.post("https://accounts.zoho.com.au/oauth/v2/token", null, {
+            params: {
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                redirect_uri: ZOHO_REDIRECT_URI,
+                code: authCode,
+                grant_type: "authorization_code"
+            },
         });
 
-        // ✅ If no table found, try extracting from JavaScript script tags
-        if (extractedData.length === 0) {
-            let scriptContent = $("script").text();
-            const match = scriptContent.match(/RangeGridData\s*=\s*({[\s\S]*?});/);
-
-            if (!match) {
-                return res.json({ error: "No table or RangeGridData found in Zoho Sheet" });
-            }
-
-            let rawData = match[1];
-            rawData = rawData.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '').replace(/([a-zA-Z0-9_]+)\s*:/g, '"$1":');
-
-            try {
-                extractedData = JSON.parse(rawData);
-            } catch (parseError) {
-                console.error("❌ JSON Parse Error:", parseError.message);
-                return res.status(500).json({ error: "Failed to parse RangeGridData" });
-            }
-        }
-
-        // ✅ Return extracted cell data
-        res.json({ extractedData });
-
+        accessToken = response.data.access_token;
+        res.json({ message: "Authenticated!", access_token: accessToken });
     } catch (error) {
-        console.error("❌ Error fetching Zoho Sheet:", error.message);
+        console.error("Error getting token:", error.response?.data || error.message);
+        res.status(500).json({ error: "Failed to get access token" });
+    }
+});
+
+// ✅ Step 3: Fetch Data from Zoho Sheet
+app.post("/fetch-data", async (req, res) => {
+    if (!accessToken) return res.status(401).json({ error: "Unauthorized. Please authenticate first." });
+
+    try {
+        const url = `https://sheet.zoho.com/api/v2/${ZOHO_SHEET_ID}?method=worksheet.records.fetch`;
+
+        const params = {
+            worksheet_name: "Sheet1",  // Change to your worksheet name
+            header_row: 1,
+            render_option: "formatted",
+            records_start_index: 1,
+            count: 5  // Fetch first 5 rows
+        };
+
+        const response = await axios.post(url, new URLSearchParams(params), {
+            headers: {
+                "Authorization": `Zoho-oauthtoken ${accessToken}`,
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        console.error("Error fetching data:", error.response?.data || error.message);
         res.status(500).json({ error: "Failed to fetch data from Zoho" });
     }
 });
 
-// ✅ Start Express Server
+// Start Server
 app.listen(PORT, () => {
-    console.log(`✅ Server running on http://localhost:${PORT}`);
+    console.log(`✅ Server running on port ${PORT}`);
 });
