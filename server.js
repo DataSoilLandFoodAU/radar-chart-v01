@@ -25,9 +25,8 @@ let accessToken = "";
  */
 const getAccessToken = async () => {
     try {
-        const response = await axios.post("https://accounts.zoho.com/oauth/v2/token", null, {
+        const response = await axios.post("https://accounts.zoho.com.au/oauth/v2/token", null, {
             params: {
-                
                 refresh_token: REFRESH_TOKEN,
                 grant_type: "refresh_token",
                 client_id: CLIENT_ID,
@@ -35,9 +34,16 @@ const getAccessToken = async () => {
             }
         });
 
-        accessToken = response.data.access_token;
-        console.log("✅ New Access Token Obtained:", accessToken);
-        return accessToken;
+        console.log("🔍 Zoho Response Data:", response.data); // Debugging log
+
+        if (response.data.access_token) {
+            accessToken = response.data.access_token;
+            console.log("✅ New Access Token Obtained:", accessToken);
+            return accessToken;
+        } else {
+            console.error("❌ No access token found in response.");
+            throw new Error("No access token received.");
+        }
     } catch (error) {
         console.error("❌ Error Getting Access Token:", error.response ? error.response.data : error.message);
         throw new Error("Failed to get access token.");
@@ -86,11 +92,18 @@ app.get('/fetch-data', async (req, res) => {
 app.get('/refresh-token', async (req, res) => {
     try {
         const token = await getAccessToken();
+
+        console.log("📌 Response to Client:", { 
+            message: "New access token obtained!", 
+            access_token: token 
+        });
+
         res.json({ 
             message: "New access token obtained!", 
             access_token: token 
-        });  // ✅ Now includes the token in the response
+        }); 
     } catch (error) {
+        console.error("❌ Error in /refresh-token route:", error);
         res.status(500).json({ error: "Failed to refresh token." });
     }
 });
