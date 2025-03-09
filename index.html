@@ -24,11 +24,18 @@
     </div>
 
     <script>
-        fetch("http://localhost:3000/fetch-data")
-        .then(response => response.json())
-        .then(data => console.log("Zoho Sheet Data:", data.extractedData))
-        .catch(error => console.error("Error fetching data:", error));
-        
+        async function fetchData() {
+            try {
+                let response = await fetch("https://datasoillandfood-radar-chart-zoho-sheet.onrender.com/fetch-data");
+                let data = await response.json();
+                document.getElementById("dataOutput").textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById("dataOutput").textContent = "Error fetching data!";
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        fetchData(); // Fetch data on page load
 
         function hexToRgba(hex, alpha) {
             const r = parseInt(hex.slice(1, 3), 16);
