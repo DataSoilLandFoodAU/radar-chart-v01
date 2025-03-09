@@ -61,16 +61,18 @@ const fetchZohoSheetData = async () => {
 
         const url = `${ZOHO_API_BASE}/${ZOHO_SHEET_ID}?method=worksheet.records.fetch`;
 
-        const response = await axios.post(url, null, {
-            params: {
-                worksheet_id: 1
-            },
+        console.log("🔍 Fetching data from:", url);
+
+        const response = await axios.post(url, {
+            worksheet_name: "Input"
+        }, {
             headers: {
                 "Authorization": `Zoho-oauthtoken ${accessToken}`,
                 "Content-Type": "application/x-www-form-urlencoded"
             }
         });
 
+        console.log("✅ Zoho Sheet Data:", response.data);
         return response.data;
     } catch (error) {
         console.error("❌ Error Fetching Zoho Sheet Data:", error.response ? error.response.data : error.message);
@@ -82,9 +84,9 @@ const fetchZohoSheetData = async () => {
 app.get('/fetch-data', async (req, res) => {
     try {
         const data = await fetchZohoSheetData();
-        res.json(data);
+        res.json({ success: true, data });
     } catch (error) {
-        res.status(500).json({ error: "Failed to fetch data from Zoho." });
+        res.status(500).json({ success: false, error: "Failed to fetch data from Zoho." });
     }
 });
 
