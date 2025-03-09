@@ -26,15 +26,36 @@
 
     <script>
         async function fetchData() {
-            try {
-                let response = await fetch("https://datasoillandfood-radar-chart-zoho-sheet.onrender.com/fetch-data");
-                let data = await response.json();
-                document.getElementById("dataOutput").textContent = JSON.stringify(data, null, 2);
-            } catch (error) {
-                document.getElementById("dataOutput").textContent = "Error fetching data!";
-                console.error("Error fetching data:", error);
-            }
+    try {
+        let response = await fetch("https://datasoillandfood-radar-chart-zoho-sheet.onrender.com/fetch-data");
+        let jsonData = await response.json();
+
+        console.log("✅ Fetched Data:", jsonData); // Debugging
+
+        let records = jsonData.data.records;
+
+        if (!records || records.length === 0) {
+            console.error("❌ No records found!");
+            return;
         }
+
+        // Extract Score values based on fixed row positions
+        let scoreMap = {};
+        records.forEach(item => {
+            let cellKey = `C${item.row_index}`; // Convert row_index to expected cell reference
+            if (cellMapping[cellKey]) {
+                scoreMap[cellMapping[cellKey]] = item.Score;
+            }
+        });
+
+        // Ensure data is ordered correctly in chart
+        const dataValues = customOrder.map(topic => scoreMap[topic] || 0); // Default 0 if missing
+
+        updateChart(customOrder, dataValues);
+    } catch (error) {
+        console.error("❌ Error fetching data:", error);
+    }
+}
 
         fetchData(); // Fetch data on page load
 
@@ -46,27 +67,26 @@
         }
 
         // Data values and labels
-        const dataValues = [3, 1, 2, 4, 3, 1, 2];
-        const labels = ["Groundcover", "Infiltration", "Aggregate Stability 1", "Aggregate Stability 2", "Soil pH", "Topsoil Depth", "Organism Diversity"];
+        const labels = ["Groundcover","Infiltration", "Aggregate Slaking", "Aggregate Dispersion", "Soil pH", "Soil Organism Diversity","Topsoil Depth"];
 
         // Assign colors based on data values (red to green scale)
         const segmentColors = dataValues.map(value => {
-            if (value === 1) return "#bf4526"; // Red
-            if (value === 2) return "#e6d419"; // Yellow
-            if (value === 3) return "#98d613"; // Light Yellowish Green
-            if (value === 4) return "#10a30d"; // Green
+            if (value === 1) return "#d51f27"; // Red
+            if (value === 2) return "#d5a828"; // Yellow
+            if (value === 3) return "#919f3a"; // Light Yellowish Green
+            if (value === 4) return "#1c7038"; // Green
             return "#CCCCCC"; // Default (if value is out of range)
         });
 
         // Category-based colors for outer rings
         const categoryColors = {
-            A: "#668fd1", // Blue for Category A
-            B: "#ab79d4", // Pink for Category B
-            C: "#79d4a6"  // Green for Category C
+            A: "#dfe8f5", // Blue for Category A
+            B: "#ebdfee", // Pink for Category B
+            C: "#e0efde"  // Green for Category C
         };
 
         // Mapping each label to its category
-        const categoryMapping = ["A", "A", "A", "A", "B", "C", "C"];
+        const categoryMapping = ["A","A", "A", "A", "B", "C", "C"];
 
         // Create the chart
         const ctx = document.getElementById("customPolarChart").getContext("2d");
