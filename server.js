@@ -14,7 +14,7 @@ app.get("/get-token", async (req, res) => {
   try {
     const response = await axios.post("https://accounts.zoho.com.au/oauth/v2/token", null, {
       params: {
-        code: "1000.33b9ee71ba4d1bf00be748dd791041ca.453d695f37811e4615a28918c69dff36", // Replace with the actual auth code
+        code: process.env.AUTH_CODE,
         grant_type: "authorization_code",
         client_id: process.env.CLIENT_ID,
         client_secret: process.env.CLIENT_SECRET,
