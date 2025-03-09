@@ -15,7 +15,7 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
 const ZOHO_SHEET_ID = process.env.ZOHO_SHEET_ID;
-const ZOHO_API_BASE = "https://www.zohoapis.com.au/sheet/api/v2";
+const ZOHO_API_BASE = "https://sheet.zoho.com.au/api/v2";
 
 // Store access token in memory
 let accessToken = "";
@@ -59,12 +59,13 @@ const fetchZohoSheetData = async () => {
             await getAccessToken(); // Get token if it's not set
         }
 
-        const url = `${ZOHO_API_BASE}/${ZOHO_SHEET_ID}?method=worksheet.records.fetch`;
+        const url = `${ZOHO_API_BASE}/${ZOHO_SHEET_ID}`;
 
         console.log("🔍 Fetching data from:", url);
 
         const response = await axios.post(url, {
-            worksheet_name: "Input"
+            "method": "worksheet.records.fetch",
+            "worksheet_name": "Input"
         }, {
             headers: {
                 "Authorization": `Zoho-oauthtoken ${accessToken}`,
