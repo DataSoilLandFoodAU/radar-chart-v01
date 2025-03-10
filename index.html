@@ -197,6 +197,14 @@
                             legend: {
                                 display: false // legend
                             },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (tooltipItem) {
+                                        let score = tooltipItem.raw - 1; // Subtract 1 from the score
+                                        return `Score: ${score}`;
+                                    }
+                                }
+                            },
                             customLabels: {}
                         },
                         elements: {
@@ -233,7 +241,7 @@
                                     ctx.beginPath();
                                     ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
                                     ctx.lineWidth = 60; // Thickness of outer ring
-                                    ctx.strokeStyle = hexToRgba(color, 0.5); // Category color
+                                    ctx.strokeStyle = hexToRgba(color, 1); // Category color
                                     ctx.stroke();
                                     ctx.restore();
                                 });
