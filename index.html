@@ -203,7 +203,7 @@
                             tooltip: {
                                 callbacks: {
                                     label: function (tooltipItem) {
-                                        let score = tooltipItem.raw; // Subtract 1 from the score
+                                        let score = tooltipItem.raw - 1; // Subtract 1 from the score
                                         return `Score: ${score}`;
                                     }
                                 }
